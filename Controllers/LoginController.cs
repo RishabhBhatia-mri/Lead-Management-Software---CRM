@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -14,10 +15,12 @@ using System;
 public class LoginController : ControllerBase {
     private readonly LeadsManagementContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public LoginController(LeadsManagementContext context, IConfiguration configuration) {
+    public LoginController(LeadsManagementContext context, IConfiguration configuration, IHttpContextAccessor httpContextAccessor) {
         _context = context;
         _configuration = configuration;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     [HttpPost("login")]
@@ -34,8 +37,12 @@ public class LoginController : ControllerBase {
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
-        // Generate JWT token
+        // Generate JWT token with Role
         var token = GenerateJwtToken(user);
+
+        // Store token and user details in session
+        _httpContextAccessor.HttpContext.Session.SetString("AuthToken", token);
+        _httpContextAccessor.HttpContext.Session.SetString("UserRole", user.Role); // Store role in session
 
         return Ok(new { message = "Login successful", token, redirectTo = "/dashboard" });
     }
@@ -45,9 +52,12 @@ public class LoginController : ControllerBase {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
 
         var claims = new[] {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Uid.ToString()), 
+        new Claim(JwtRegisteredClaimNames.Sub, user.Uid.ToString()),
         new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        new Claim(ClaimTypes.Role, user.Role), // Include Role in Token
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim(JwtRegisteredClaimNames.Exp,
+            new DateTimeOffset(DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"]))).ToUnixTimeSeconds().ToString()) // Expiry claim
     };
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -56,12 +66,13 @@ public class LoginController : ControllerBase {
             issuer: jwtSettings["Issuer"],
             audience: jwtSettings["Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"])),
+            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"])), 
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
 
 }
 
