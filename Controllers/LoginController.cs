@@ -1,16 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using LeadManagment.Models;
+using Microsoft.Extensions.Configuration;
+using System;
 
 [Route("auth")]
 [ApiController]
 public class LoginController : ControllerBase {
     private readonly LeadsManagementContext _context;
+    private readonly IConfiguration _configuration;
 
-    public LoginController(LeadsManagementContext context) {
+    public LoginController(LeadsManagementContext context, IConfiguration configuration) {
         _context = context;
+        _configuration = configuration;
     }
 
     [HttpPost("login")]
@@ -23,13 +30,39 @@ public class LoginController : ControllerBase {
             .Where(u => u.Email == request.Email)
             .FirstOrDefaultAsync();
 
-        if (user == null || user.Password != request.Password) // Simple password check
-        {
+        if (user == null || user.Password != request.Password) {
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
-        return Ok(new { message = "Login successful", redirectTo = "/dashboard" });
+        // Generate JWT token
+        var token = GenerateJwtToken(user);
+
+        return Ok(new { message = "Login successful", token, redirectTo = "/dashboard" });
     }
+
+    private string GenerateJwtToken(User user) {
+        var jwtSettings = _configuration.GetSection("JwtConfig");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
+
+        var claims = new[] {
+        new Claim(JwtRegisteredClaimNames.Sub, user.Uid.ToString()), 
+        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    };
+
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: jwtSettings["Issuer"],
+            audience: jwtSettings["Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"])),
+            signingCredentials: creds
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
 }
 
 public class LoginRequest {
