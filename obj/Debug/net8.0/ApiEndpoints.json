@@ -44,5 +44,21 @@
     "Order": 0,
     "Parameters": [],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
+    "Method": "CreateLead",
+    "RelativePath": "leads/create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "lead",
+        "Type": "LeadManagment.Models.Lead",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]
