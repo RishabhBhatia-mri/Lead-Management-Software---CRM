@@ -101,5 +101,26 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
+    "Method": "UpdateLead",
+    "RelativePath": "leads/update-lead/{leadId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "updatedLead",
+        "Type": "LeadManagment.DTO.UpdateLeadDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

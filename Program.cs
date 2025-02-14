@@ -1,4 +1,3 @@
-using LeadManagment.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -7,11 +6,6 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-
-// Configure database context
-builder.Services.AddDbContext<LeadsManagementContext>(options =>
-    options.UseMySql(builder.Configuration.GetConnectionString("lmdb"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("lmdb"))));
 
 // JWT token config
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
