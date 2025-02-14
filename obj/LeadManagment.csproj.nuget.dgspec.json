@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Rishabh.Bhatia\\Desktop\\CRM - Project\\LeadManagment\\LeadManagment\\LeadManagment.csproj": {}
+    "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Rishabh.Bhatia\\Desktop\\CRM - Project\\LeadManagment\\LeadManagment\\LeadManagment.csproj": {
+    "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Rishabh.Bhatia\\Desktop\\CRM - Project\\LeadManagment\\LeadManagment\\LeadManagment.csproj",
+        "projectUniqueName": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj",
         "projectName": "LeadManagment",
-        "projectPath": "C:\\Users\\Rishabh.Bhatia\\Desktop\\CRM - Project\\LeadManagment\\LeadManagment\\LeadManagment.csproj",
-        "packagesPath": "C:\\Users\\Rishabh.Bhatia\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Rishabh.Bhatia\\Desktop\\CRM - Project\\LeadManagment\\LeadManagment\\obj\\",
+        "projectPath": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj",
+        "packagesPath": "C:\\Users\\Smit.Ankhiwala\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Rishabh.Bhatia\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Smit.Ankhiwala\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -45,12 +44,20 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.100"
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "EPPlus": {
+              "target": "Package",
+              "version": "[7.6.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.13, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[8.0.13, )"
@@ -68,6 +75,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.6.2, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.4.0, )"
             }
           },
           "imports": [
@@ -89,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.102/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
