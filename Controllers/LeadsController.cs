@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 [Route("leads")]
 [ApiController]
@@ -149,4 +150,79 @@ public class LeadController : ControllerBase
 
         return Ok(new { message = "Lead created successfully.", lead = newLead });
     }
+
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateLead(int id, [FromBody] JsonElement requestBody)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        var lead = await _context.Leads.FindAsync(id);
+        if (lead == null)
+        {
+            return NotFound(new { message = "Lead not found" });
+        }
+
+        // Role-based access control
+        if (userRole == "Manager")
+        {
+            var managerLeads = await _context.Leads
+                .Where(l => l.ManagerAssigned == userId ||
+                            _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+                .Select(l => l.Lid)
+                .ToListAsync();
+
+            if (!managerLeads.Contains(id))
+                return Forbid();
+        }
+        else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
+        {
+            return Forbid();
+        }
+
+        // Allowed fields to update
+        var allowedFields = new List<string> { "Name", "Email", "Phone", "Source" };
+        var leadType = typeof(Lead);
+
+        // Iterate over the JSON properties
+        foreach (var property in requestBody.EnumerateObject())
+        {
+            var propName = property.Name;
+            var propValue = property.Value.ToString();
+
+            // Check if the property is allowed
+            if (!allowedFields.Contains(propName))
+                continue;
+
+            var propInfo = leadType.GetProperty(propName);
+            if (propInfo != null)
+            {
+                var oldValue = propInfo.GetValue(lead)?.ToString();
+                if (oldValue != propValue)
+                {
+                    // Update lead property
+                    propInfo.SetValue(lead, Convert.ChangeType(propValue, propInfo.PropertyType));
+
+                    // Log the update
+                    var leadUpdateLog = new LeadUpdateLog
+                    {
+                        Lid = id,
+                        Uid = userId,
+                        FieldUpdated = propName,
+                        OldValue = oldValue,
+                        NewValue = propValue,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.LeadUpdateLogs.Add(leadUpdateLog);
+                }
+            }
+        }
+
+        lead.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Lead updated successfully" });
+    }
+
 }
