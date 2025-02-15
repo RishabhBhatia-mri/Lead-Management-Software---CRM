@@ -47,20 +47,15 @@
   },
   {
     "ContainingType": "LeadController",
-    "Method": "UpdateLead",
+    "Method": "DeleteLead",
     "RelativePath": "leads/{id}",
-    "HttpMethod": "PUT",
+    "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "id",
         "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "requestBody",
-        "Type": "System.Text.Json.JsonElement",
         "IsRequired": true
       }
     ],
@@ -77,6 +72,27 @@
       {
         "Name": "lead",
         "Type": "LeadManagment.Models.Lead",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
+    "Method": "UpdateLead",
+    "RelativePath": "leads/update/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
         "IsRequired": true
       }
     ],

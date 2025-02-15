@@ -53,6 +53,57 @@ public class LeadController : ControllerBase
         return Ok(new { message = "Leads fetched successfully.", leads });
     }
 
+    //[Authorize]
+    //[HttpGet("{id}")]
+    //public async Task<IActionResult> GetLeadById(int id)
+    //{
+    //    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+    //    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+    //    var lead = await _context.Leads
+    //        .Include(l => l.ManagerAssignedNavigation)
+    //        .Include(l => l.SalesRepAssignedNavigation)
+    //        .FirstOrDefaultAsync(l => l.Lid == id);
+
+    //    if (lead == null)
+    //    {
+    //        return NotFound(new { message = "Lead not found" });
+    //    }
+
+    //    // Role-based access control
+    //    if (userRole == "Manager")
+    //    {
+    //        var managerLeads = await _context.Leads
+    //            .Where(l => l.ManagerAssigned == userId ||
+    //                        _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+    //            .Select(l => l.Lid)
+    //            .ToListAsync();
+
+    //        if (!managerLeads.Contains(id))
+    //            return Forbid();
+    //    }
+    //    else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
+    //    {
+    //        return Forbid();
+    //    }
+
+    //    return Ok(new
+    //    {
+    //        LeadId = lead.Lid,
+    //        Name = lead.Name,
+    //        Email = lead.Email,
+    //        Phone = lead.Phone,
+    //        Source = lead.Source,
+    //        Status = lead.Status,
+    //        ManagerAssigned = lead.ManagerAssignedNavigation?.Name,
+    //        SalesRepAssigned = lead.SalesRepAssignedNavigation?.Name,
+    //        CreatedBy = lead.CreatedBy,
+    //        CreatedAt = lead.CreatedAt,
+    //        UpdatedAt = lead.UpdatedAt,
+    //        AssignedAt = lead.AssignedAt
+    //    });
+    //}
+
     [HttpPost("create")]
     public async Task<IActionResult> CreateLead([FromBody] Lead lead)
     {
@@ -152,7 +203,7 @@ public class LeadController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut("{id}")]
+    [HttpPut("update/{id}")]
     public async Task<IActionResult> UpdateLead(int id, [FromBody] JsonElement requestBody)
     {
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
@@ -223,6 +274,42 @@ public class LeadController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Lead updated successfully" });
+    }
+
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteLead(int id)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        var lead = await _context.Leads.FindAsync(id);
+        if (lead == null)
+        {
+            return NotFound(new { message = "Lead not found" });
+        }
+
+        // Role-based access control
+        if (userRole == "Manager")
+        {
+            var managerLeads = await _context.Leads
+                .Where(l => l.ManagerAssigned == userId ||
+                            _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+                .Select(l => l.Lid)
+                .ToListAsync();
+
+            if (!managerLeads.Contains(id))
+                return Forbid();
+        }
+        else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
+        {
+            return Forbid();
+        }
+
+        _context.Leads.Remove(lead);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Lead deleted successfully" });
     }
 
 }
