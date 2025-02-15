@@ -1,5 +1,6 @@
 ﻿using LeadManagment.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -310,6 +311,71 @@ public class LeadController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Lead deleted successfully" });
+    }
+
+    [Authorize]
+    [HttpPatch("assign/{leadId}")]
+    public async Task<IActionResult> AssignLeadToSalesRep(int leadId, [FromBody] JsonElement requestBody)
+    {
+        if (!requestBody.TryGetProperty("SalesRepAssigned", out JsonElement salesRepElement) || !salesRepElement.TryGetInt32(out int newSalesRepId))
+        {
+            return BadRequest(new { message = "Sales Representative ID is required and must be an integer." });
+        }
+
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        // Fetch the lead
+        var lead = await _context.Leads.FindAsync(leadId);
+        if (lead == null)
+        {
+            return NotFound(new { message = "Lead not found" });
+        }
+
+        // Fetch the new Sales Rep
+        var salesRep = await _context.Users
+            .FirstOrDefaultAsync(u => u.Uid == newSalesRepId && u.Role == "Sales Representative");
+
+        if (salesRep == null)
+        {
+            return BadRequest(new { message = "Invalid Sales Representative ID" });
+        }
+
+        // Prevent Sales Representatives from assigning leads
+        if (userRole == "Sales Representative")
+        {
+            return Forbid();
+        }
+
+        // ✅ Admin Condition: Lead's ManagerAssigned must match SalesRep's ReportsTo
+        if (userRole == "Admin")
+        {
+            if (lead.ManagerAssigned == null || lead.ManagerAssigned != salesRep.ReportsTo)
+            {
+                return BadRequest(new { message = "The assigned Sales Rep must report to the lead's assigned Manager." });
+            }
+        }
+        // ✅ Manager Condition: Lead must be assigned to them & Sales Rep must report to them
+        else if (userRole == "Manager")
+        {
+            if (lead.ManagerAssigned != userId || salesRep.ReportsTo != userId)
+            {
+                return Forbid();
+            }
+        }
+
+        // Assign or reassign Sales Rep
+        lead.SalesRepAssigned = newSalesRepId;
+        lead.AssignedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Lead assigned successfully",
+            leadId,
+            newSalesRepId
+        });
     }
 
 }

@@ -261,3 +261,5 @@ C:\Users\Smit.Ankhiwala\Desktop\Demo\obj\Debug\net8.0\refint\LeadManagment.dll
 C:\Users\Smit.Ankhiwala\Desktop\Demo\obj\Debug\net8.0\LeadManagment.pdb
 C:\Users\Smit.Ankhiwala\Desktop\Demo\obj\Debug\net8.0\LeadManagment.genruntimeconfig.cache
 C:\Users\Smit.Ankhiwala\Desktop\Demo\obj\Debug\net8.0\ref\LeadManagment.dll
+C:\Users\Smit.Ankhiwala\Desktop\Demo\bin\Debug\net8.0\Microsoft.AspNetCore.JsonPatch.dll
+C:\Users\Smit.Ankhiwala\Desktop\Demo\bin\Debug\net8.0\Newtonsoft.Json.dll

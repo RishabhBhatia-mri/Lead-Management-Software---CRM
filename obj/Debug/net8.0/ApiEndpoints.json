@@ -63,6 +63,27 @@
   },
   {
     "ContainingType": "LeadController",
+    "Method": "AssignLeadToSalesRep",
+    "RelativePath": "leads/assign/{leadId}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
     "Method": "CreateLead",
     "RelativePath": "leads/create",
     "HttpMethod": "POST",
