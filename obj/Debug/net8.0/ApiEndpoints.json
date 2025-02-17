@@ -100,6 +100,27 @@
   },
   {
     "ContainingType": "LeadController",
+    "Method": "UpdateLeadStatus",
+    "RelativePath": "leads/status/{leadId}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
     "Method": "UpdateLead",
     "RelativePath": "leads/update/{id}",
     "HttpMethod": "PUT",

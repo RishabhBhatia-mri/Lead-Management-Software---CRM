@@ -347,7 +347,7 @@ public class LeadController : ControllerBase
             return Forbid();
         }
 
-        // ✅ Admin Condition: Lead's ManagerAssigned must match SalesRep's ReportsTo
+        // Lead's ManagerAssigned must match SalesRep's ReportsTo
         if (userRole == "Admin")
         {
             if (lead.ManagerAssigned == null || lead.ManagerAssigned != salesRep.ReportsTo)
@@ -355,7 +355,7 @@ public class LeadController : ControllerBase
                 return BadRequest(new { message = "The assigned Sales Rep must report to the lead's assigned Manager." });
             }
         }
-        // ✅ Manager Condition: Lead must be assigned to them & Sales Rep must report to them
+        // Lead must be assigned to them & Sales Rep must report to them
         else if (userRole == "Manager")
         {
             if (lead.ManagerAssigned != userId || salesRep.ReportsTo != userId)
@@ -375,6 +375,118 @@ public class LeadController : ControllerBase
             message = "Lead assigned successfully",
             leadId,
             newSalesRepId
+        });
+    }
+
+    [HttpPatch("status/{leadId}")]
+    public async Task<IActionResult> UpdateLeadStatus(int leadId, [FromBody] JsonElement requestBody)
+    {
+        // Get user ID and role from JWT token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+        if (userIdClaim == null || userRoleClaim == null)
+        {
+            return Unauthorized("User ID or Role not found in token.");
+        }
+
+        int userId = int.Parse(userIdClaim.Value);
+        string userRole = userRoleClaim.Value;
+
+        // Extract status from request body
+        if (!requestBody.TryGetProperty("status", out JsonElement statusElement) || statusElement.ValueKind != JsonValueKind.String)
+        {
+            return BadRequest("Invalid request. 'status' field is required and must be a string.");
+        }
+
+        string newStatus = statusElement.GetString()?.Trim();
+
+        // Validate the new status
+        if (string.IsNullOrEmpty(newStatus) || !new[] { "New", "Contacted", "Follow-up", "Converted", "Lost" }.Contains(newStatus))
+        {
+            return BadRequest("Invalid status value.");
+        }
+
+        // Find the lead
+        var lead = await _context.Leads.FindAsync(leadId);
+        if (lead == null)
+        {
+            return NotFound("Lead not found.");
+        }
+
+        string oldStatus = lead.Status ?? "New"; // Default to "New" if null
+
+        // Check if the status is actually changing
+        if (oldStatus == newStatus)
+        {
+            return BadRequest("Lead status is already set to the requested status.");
+        }
+
+        // **Authorization Check**
+        if (userRole == "Admin")
+        {
+            // Admin can update any lead status
+        }
+        else if (userRole == "Manager")
+        {
+            // Manager can update leads assigned to them or their Sales Representatives
+            bool isManagerAssigned = lead.ManagerAssigned == userId;
+            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+            if (!isManagerAssigned && !isSalesRepUnderManager)
+            {
+                return Forbid("You are not authorized to update this lead.");
+            }
+        }
+        else if (userRole == "Sales Representative")
+        {
+            // Sales Representative can only update their assigned leads
+            if (lead.SalesRepAssigned != userId)
+            {
+                return Forbid("You are not authorized to update this lead.");
+            }
+        }
+        else
+        {
+            return Forbid("Invalid role.");
+        }
+
+        // **Update lead status**
+        lead.Status = newStatus;
+        lead.UpdatedAt = DateTime.UtcNow;
+
+        // Insert into LeadStatusHistory
+        var statusHistory = new LeadStatusHistory
+        {
+            Lid = leadId,
+            Uid = userId,
+            OldStatus = oldStatus,
+            NewStatus = newStatus,
+            TimeOfChange = DateTime.UtcNow
+        };
+        _context.LeadStatusHistories.Add(statusHistory);
+
+        // Insert into LeadUpdateLog
+        var updateLog = new LeadUpdateLog
+        {
+            Lid = leadId,
+            Uid = userId,
+            FieldUpdated = "Status",
+            OldValue = oldStatus,
+            NewValue = newStatus,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context.LeadUpdateLogs.Add(updateLog);
+
+        // Save changes
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Lead status updated successfully.",
+            LeadId = leadId,
+            OldStatus = oldStatus,
+            NewStatus = newStatus
         });
     }
 
