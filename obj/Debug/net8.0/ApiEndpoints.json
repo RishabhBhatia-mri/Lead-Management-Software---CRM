@@ -47,6 +47,22 @@
   },
   {
     "ContainingType": "LeadController",
+    "Method": "GetLeadById",
+    "RelativePath": "leads/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
     "Method": "DeleteLead",
     "RelativePath": "leads/{id}",
     "HttpMethod": "DELETE",
@@ -93,6 +109,27 @@
       {
         "Name": "lead",
         "Type": "LeadManagment.Models.Lead",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
+    "Method": "AddLeadNote",
+    "RelativePath": "leads/notes/{leadId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
         "IsRequired": true
       }
     ],

@@ -54,56 +54,56 @@ public class LeadController : ControllerBase
         return Ok(new { message = "Leads fetched successfully.", leads });
     }
 
-    //[Authorize]
-    //[HttpGet("{id}")]
-    //public async Task<IActionResult> GetLeadById(int id)
-    //{
-    //    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-    //    var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetLeadById(int id)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-    //    var lead = await _context.Leads
-    //        .Include(l => l.ManagerAssignedNavigation)
-    //        .Include(l => l.SalesRepAssignedNavigation)
-    //        .FirstOrDefaultAsync(l => l.Lid == id);
+        var lead = await _context.Leads
+            .Include(l => l.ManagerAssignedNavigation)
+            .Include(l => l.SalesRepAssignedNavigation)
+            .FirstOrDefaultAsync(l => l.Lid == id);
 
-    //    if (lead == null)
-    //    {
-    //        return NotFound(new { message = "Lead not found" });
-    //    }
+        if (lead == null)
+        {
+            return NotFound(new { message = "Lead not found" });
+        }
 
-    //    // Role-based access control
-    //    if (userRole == "Manager")
-    //    {
-    //        var managerLeads = await _context.Leads
-    //            .Where(l => l.ManagerAssigned == userId ||
-    //                        _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
-    //            .Select(l => l.Lid)
-    //            .ToListAsync();
+        // Role-based access control
+        if (userRole == "Manager")
+        {
+            var managerLeads = await _context.Leads
+                .Where(l => l.ManagerAssigned == userId ||
+                            _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+                .Select(l => l.Lid)
+                .ToListAsync();
 
-    //        if (!managerLeads.Contains(id))
-    //            return Forbid();
-    //    }
-    //    else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
-    //    {
-    //        return Forbid();
-    //    }
+            if (!managerLeads.Contains(id))
+                return Forbid();
+        }
+        else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
+        {
+            return Forbid();
+        }
 
-    //    return Ok(new
-    //    {
-    //        LeadId = lead.Lid,
-    //        Name = lead.Name,
-    //        Email = lead.Email,
-    //        Phone = lead.Phone,
-    //        Source = lead.Source,
-    //        Status = lead.Status,
-    //        ManagerAssigned = lead.ManagerAssignedNavigation?.Name,
-    //        SalesRepAssigned = lead.SalesRepAssignedNavigation?.Name,
-    //        CreatedBy = lead.CreatedBy,
-    //        CreatedAt = lead.CreatedAt,
-    //        UpdatedAt = lead.UpdatedAt,
-    //        AssignedAt = lead.AssignedAt
-    //    });
-    //}
+        return Ok(new
+        {
+            LeadId = lead.Lid,
+            Name = lead.Name,
+            Email = lead.Email,
+            Phone = lead.Phone,
+            Source = lead.Source,
+            Status = lead.Status,
+            ManagerAssigned = lead.ManagerAssignedNavigation?.Name,
+            SalesRepAssigned = lead.SalesRepAssignedNavigation?.Name,
+            CreatedBy = lead.CreatedBy,
+            CreatedAt = lead.CreatedAt,
+            UpdatedAt = lead.UpdatedAt,
+            AssignedAt = lead.AssignedAt
+        });
+    }
 
     [HttpPost("create")]
     public async Task<IActionResult> CreateLead([FromBody] Lead lead)
@@ -487,6 +487,109 @@ public class LeadController : ControllerBase
             LeadId = leadId,
             OldStatus = oldStatus,
             NewStatus = newStatus
+        });
+    }
+
+    [HttpPost("notes/{leadId}")]
+    public async Task<IActionResult> AddLeadNote(int leadId, [FromBody] JsonElement requestBody)
+    {
+        // Get user ID and role from JWT token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+        if (userIdClaim == null || userRoleClaim == null)
+        {
+            return Unauthorized("User ID or Role not found in token.");
+        }
+
+        int userId = int.Parse(userIdClaim.Value);
+        string userRole = userRoleClaim.Value;
+
+        // Extract notes from request body
+        if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String)
+        {
+            return BadRequest("Invalid request. 'notes' field is required and must be a string.");
+        }
+
+        string notes = notesElement.GetString()?.Trim();
+
+        // Validate notes
+        if (string.IsNullOrEmpty(notes))
+        {
+            return BadRequest("Notes cannot be empty.");
+        }
+
+        // Find the lead
+        var lead = await _context.Leads.FindAsync(leadId);
+        if (lead == null)
+        {
+            return NotFound("Lead not found.");
+        }
+
+        // **Authorization Check**
+        if (userRole == "Admin")
+        {
+            return Forbid("Admins are not allowed to add notes.");
+        }
+        else if (userRole == "Manager")
+        {
+            // Manager can add notes only if the lead is assigned to them or their Sales Representative
+            bool isManagerAssigned = lead.ManagerAssigned == userId;
+            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+            if (!isManagerAssigned && !isSalesRepUnderManager)
+            {
+                return Forbid("You are not authorized to add notes to this lead.");
+            }
+        }
+        else if (userRole == "Sales Representative")
+        {
+            // Sales Representative can add notes only to their assigned leads
+            if (lead.SalesRepAssigned != userId)
+            {
+                return Forbid("You are not authorized to add notes to this lead.");
+            }
+        }
+        else
+        {
+            return Forbid("Invalid role.");
+        }
+
+        // **Save Note to LeadActivityLog**
+        var leadActivityLog = new LeadActivityLog
+        {
+            Lid = leadId,
+            Uid = userId,
+            ActivityDate = DateTime.UtcNow,
+            Notes = notes,
+            Responded = false // Assuming default false
+        };
+
+        _context.LeadActivityLogs.Add(leadActivityLog);
+
+        // **Save Follow-up Entry in LeadFollowUps**
+        var leadFollowUp = new LeadFollowUp
+        {
+            Lid = leadId,
+            Uid = userId,
+            FollowUpDate = DateTime.UtcNow.AddDays(2), // Assuming next follow-up in 2 days
+            Status = "Pending",
+            Notes = notes,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.LeadFollowUps.Add(leadFollowUp);
+
+        // Commit changes to database
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Note added successfully and follow-up scheduled.",
+            LeadId = leadId,
+            AddedBy = userId,
+            Notes = notes,
+            FollowUpDate = leadFollowUp.FollowUpDate
         });
     }
 
