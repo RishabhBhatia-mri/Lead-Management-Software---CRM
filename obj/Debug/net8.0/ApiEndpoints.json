@@ -137,6 +137,48 @@
   },
   {
     "ContainingType": "LeadController",
+    "Method": "AddNoteToLeadActivityLog",
+    "RelativePath": "leads/notes/activitylog/{leadId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
+    "Method": "AddNoteAndStatusToLeadFollowUp",
+    "RelativePath": "leads/notes/followup/{leadId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
     "Method": "UpdateLeadStatus",
     "RelativePath": "leads/status/{leadId}",
     "HttpMethod": "PATCH",

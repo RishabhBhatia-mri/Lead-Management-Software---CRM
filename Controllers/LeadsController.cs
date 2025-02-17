@@ -593,4 +593,191 @@ public class LeadController : ControllerBase
         });
     }
 
+    [HttpPost("notes/activitylog/{leadId}")]
+    public async Task<IActionResult> AddNoteToLeadActivityLog(int leadId, [FromBody] JsonElement requestBody)
+    {
+        // Get user ID and role from JWT token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+        if (userIdClaim == null || userRoleClaim == null)
+        {
+            return Unauthorized("User ID or Role not found in token.");
+        }
+
+        int userId = int.Parse(userIdClaim.Value);
+        string userRole = userRoleClaim.Value;
+
+        // Extract notes from request body
+        if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String)
+        {
+            return BadRequest("Invalid request. 'notes' field is required and must be a string.");
+        }
+
+        string notes = notesElement.GetString()?.Trim();
+
+        // Validate notes
+        if (string.IsNullOrEmpty(notes))
+        {
+            return BadRequest("Notes cannot be empty.");
+        }
+
+        // Find the lead
+        var lead = await _context.Leads.FindAsync(leadId);
+        if (lead == null)
+        {
+            return NotFound("Lead not found.");
+        }
+
+        // **Authorization Check**
+        if (userRole == "Admin")
+        {
+            return Forbid("Admins are not allowed to add notes.");
+        }
+        else if (userRole == "Manager")
+        {
+            bool isManagerAssigned = lead.ManagerAssigned == userId;
+            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+            if (!isManagerAssigned && !isSalesRepUnderManager)
+            {
+                return Forbid("You are not authorized to add notes to this lead.");
+            }
+        }
+        else if (userRole == "Sales Representative")
+        {
+            if (lead.SalesRepAssigned != userId)
+            {
+                return Forbid("You are not authorized to add notes to this lead.");
+            }
+        }
+
+        // **Add note to LeadActivityLog**
+        var leadActivityLog = new LeadActivityLog
+        {
+            Lid = leadId,
+            Uid = userId,
+            ActivityDate = DateTime.UtcNow,
+            Notes = notes,
+            Responded = false
+        };
+
+        _context.LeadActivityLogs.Add(leadActivityLog);
+
+        // Commit changes to database
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Note added to activity log successfully.",
+            LeadId = leadId,
+            AddedBy = userId,
+            Notes = notes
+        });
+    }
+
+    [HttpPost("notes/followup/{leadId}")]
+    public async Task<IActionResult> AddNoteAndStatusToLeadFollowUp(int leadId, [FromBody] JsonElement requestBody)
+    {
+        // Get user ID and role from JWT token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+        if (userIdClaim == null || userRoleClaim == null)
+        {
+            return Unauthorized("User ID or Role not found in token.");
+        }
+
+        int userId = int.Parse(userIdClaim.Value);
+        string userRole = userRoleClaim.Value;
+
+        // Extract notes and status from the request body
+        if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String ||
+            !requestBody.TryGetProperty("status", out JsonElement statusElement) || statusElement.ValueKind != JsonValueKind.String)
+        {
+            return BadRequest("Invalid request. 'notes' and 'status' are required and must be valid.");
+        }
+
+        string notes = notesElement.GetString()?.Trim();
+        string status = statusElement.GetString()?.Trim();
+        DateTime followUpDate = DateTime.UtcNow;  // Default follow-up date is set to the current date and time.
+
+        if (string.IsNullOrEmpty(notes))
+        {
+            return BadRequest("Notes cannot be empty.");
+        }
+
+        // Validate the status value is one of the allowed strings
+        var validStatuses = new[] { "Pending", "Completed", "Missed" };
+        if (string.IsNullOrEmpty(status) || !validStatuses.Contains(status))
+        {
+            return BadRequest("Invalid status. Please provide a valid status ('Pending', 'Completed', or 'Missed').");
+        }
+
+        // Check if follow_up_date was provided in the request
+        if (requestBody.TryGetProperty("follow_up_date", out JsonElement followUpDateElement) && followUpDateElement.ValueKind == JsonValueKind.String)
+        {
+            if (!DateTime.TryParse(followUpDateElement.GetString(), out followUpDate))
+            {
+                return BadRequest("Invalid date format for follow-up.");
+            }
+        }
+
+        // Find the lead
+        var lead = await _context.Leads.FindAsync(leadId);
+        if (lead == null)
+        {
+            return NotFound("Lead not found.");
+        }
+
+        // **Authorization Check**
+        if (userRole == "Admin")
+        {
+            return Forbid("Admins are not allowed to add notes.");
+        }
+        else if (userRole == "Manager")
+        {
+            bool isManagerAssigned = lead.ManagerAssigned == userId;
+            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+            if (!isManagerAssigned && !isSalesRepUnderManager)
+            {
+                return Forbid("You are not authorized to add notes to this lead.");
+            }
+        }
+        else if (userRole == "Sales Representative")
+        {
+            if (lead.SalesRepAssigned != userId)
+            {
+                return Forbid("You are not authorized to add notes to this lead.");
+            }
+        }
+
+        // **Save Follow-up Entry in LeadFollowUps**
+        var leadFollowUp = new LeadFollowUp
+        {
+            Lid = leadId,
+            Uid = userId,
+            FollowUpDate = followUpDate,  // Default to current date if not provided
+            Status = status,  // Status as string (e.g., 'Pending', 'Completed', 'Missed')
+            Notes = notes,  // Notes for the follow-up
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.LeadFollowUps.Add(leadFollowUp);
+
+        // Commit changes to database
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Follow-up created successfully with notes and status.",
+            LeadId = leadId,
+            AddedBy = userId,
+            Notes = notes,
+            Status = status,
+            FollowUpDate = followUpDate
+        });
+    }
+
 }
