@@ -79,6 +79,32 @@
   },
   {
     "ContainingType": "LeadController",
+    "Method": "GetActivityLogs",
+    "RelativePath": "leads/activity-history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
+    "Method": "GetActivityLogsByLead",
+    "RelativePath": "leads/activity-history/{leadId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadController",
     "Method": "AssignLeadToSalesRep",
     "RelativePath": "leads/assign/{leadId}",
     "HttpMethod": "PATCH",
