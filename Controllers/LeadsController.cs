@@ -1,687 +1,685 @@
 ﻿using LeadManagment.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
-[Route("leads")]
-[ApiController]
-[Authorize] 
-public class LeadController : ControllerBase
+namespace LeadManagment.Controllers
 {
-    private readonly LeadsManagementContext _context;
-
-    public LeadController(LeadsManagementContext context)
-    {
-        _context = context;
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetLeads()
-    {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-        var userRole = User.FindFirst(ClaimTypes.Role).Value;
-
-        var query = _context.Leads.AsQueryable();
-
-        if (userRole == "Sales Representative")
-        {
-            query = query.Where(l => l.SalesRepAssigned == userId);
-        }
-        else if (userRole == "Manager")
-        {
-            var salesRepIds = await _context.Users
-                .Where(u => u.ReportsTo == userId)
-                .Select(u => u.Uid) 
-                .ToListAsync();
-
-            query = query.Where(l => salesRepIds.Contains(l.SalesRepAssigned ?? 0) || l.ManagerAssigned == userId);
-        }
-        else if (userRole == "Admin")
-        {
-            // Admin can see all leads
-            // No filtering needed for Admin
-        }
-        else
-        {
-            return Unauthorized(new { message = "Invalid role. Access denied." });
-        }
-
-        var leads = await query.ToListAsync();
-
-        return Ok(new { message = "Leads fetched successfully.", leads });
-    }
-
+    [Route("leads")]
+    [ApiController]
     [Authorize]
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetLeadById(int id)
+    public class LeadController : ControllerBase
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+        private readonly LeadsManagementContext _context;
 
-        var lead = await _context.Leads
-            .Include(l => l.ManagerAssignedNavigation)
-            .Include(l => l.SalesRepAssignedNavigation)
-            .FirstOrDefaultAsync(l => l.Lid == id);
-
-        if (lead == null)
+        public LeadController(LeadsManagementContext context)
         {
-            return NotFound(new { message = "Lead not found" });
+            _context = context;
         }
 
-        // Role-based access control
-        if (userRole == "Manager")
+        [HttpGet]
+        public async Task<IActionResult> GetLeads()
         {
-            var managerLeads = await _context.Leads
-                .Where(l => l.ManagerAssigned == userId ||
-                            _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
-                .Select(l => l.Lid)
-                .ToListAsync();
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var userRole = User.FindFirst(ClaimTypes.Role).Value;
 
-            if (!managerLeads.Contains(id))
-                return Forbid();
-        }
-        else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
-        {
-            return Forbid();
-        }
+            var query = _context.Leads.AsQueryable();
 
-        return Ok(new
-        {
-            LeadId = lead.Lid,
-            Name = lead.Name,
-            Email = lead.Email,
-            Phone = lead.Phone,
-            Source = lead.Source,
-            Status = lead.Status,
-            ManagerAssigned = lead.ManagerAssignedNavigation?.Name,
-            SalesRepAssigned = lead.SalesRepAssignedNavigation?.Name,
-            CreatedBy = lead.CreatedBy,
-            CreatedAt = lead.CreatedAt,
-            UpdatedAt = lead.UpdatedAt,
-            AssignedAt = lead.AssignedAt
-        });
-    }
-
-    [HttpPost("create")]
-    public async Task<IActionResult> CreateLead([FromBody] Lead lead)
-    {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
-        var userRole = User.FindFirst(ClaimTypes.Role).Value;
-
-        // Create a new lead object
-        Lead newLead = new Lead
-        {
-            Name = lead.Name,
-            Email = lead.Email,
-            Phone = lead.Phone,
-            Source = lead.Source,
-            Status = lead.Status,
-            CreatedBy = userId,
-            CreatedAt = DateTime.UtcNow,
-            AssignedAt = DateTime.UtcNow
-        };
-
-        // Handle Sales Representative role
-        if (userRole == "Sales Representative")
-        {
-            if (lead.ManagerAssigned != null || lead.SalesRepAssigned != null)
+            if (userRole == "Sales Representative")
             {
-                return BadRequest(new { message = "Sales Representatives cannot assign Manager or Sales Representative to the lead." });
+                query = query.Where(l => l.SalesRepAssigned == userId);
+            }
+            else if (userRole == "Manager")
+            {
+                var salesRepIds = await _context.Users
+                    .Where(u => u.ReportsTo == userId)
+                    .Select(u => u.Uid)
+                    .ToListAsync();
+
+                query = query.Where(l => salesRepIds.Contains(l.SalesRepAssigned ?? 0) || l.ManagerAssigned == userId);
+            }
+            else if (userRole == "Admin")
+            {
+                // Admin can see all leads
+                // No filtering needed for Admin
+            }
+            else
+            {
+                return Unauthorized(new { message = "Invalid role. Access denied." });
             }
 
-            // Automatically assign ManagerAssigned to the Sales Rep's Manager
-            var manager = await _context.Users
-                .Where(u => u.Uid == userId)
-                .Select(u => u.ReportsTo)
-                .FirstOrDefaultAsync();
+            var leads = await query.ToListAsync();
 
-            if (manager == null)
+            return Ok(new { message = "Leads fetched successfully.", leads });
+        }
+
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetLeadById(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var lead = await _context.Leads
+                .Include(l => l.ManagerAssignedNavigation)
+                .Include(l => l.SalesRepAssignedNavigation)
+                .FirstOrDefaultAsync(l => l.Lid == id);
+
+            if (lead == null)
             {
-                return BadRequest(new { message = "Sales Representative does not have a Manager assigned." });
+                return NotFound(new { message = "Lead not found" });
             }
 
-            newLead.ManagerAssigned = manager;
-            newLead.SalesRepAssigned = userId; // Automatically assign Sales Rep to themselves
-        }
-        // Handle Manager role
-        else if (userRole == "Manager")
-        {
-            if (lead.SalesRepAssigned != null)
+            // Role-based access control
+            if (userRole == "Manager")
             {
-                var validSalesRep = await _context.Users
-                    .AnyAsync(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+                var managerLeads = await _context.Leads
+                    .Where(l => l.ManagerAssigned == userId ||
+                                _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+                    .Select(l => l.Lid)
+                    .ToListAsync();
 
-                if (!validSalesRep)
+                if (!managerLeads.Contains(id))
+                    return BadRequest(new { message = "You are not authorized to access this lead. You may only view leads assigned to your team." });
+            }
+            else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
+            {
+                return BadRequest(new { message = "You are not authorized to access this lead. This lead is not assigned to you." });
+            }
+
+            return Ok(new
+            {
+                LeadId = lead.Lid,
+                Name = lead.Name,
+                Email = lead.Email,
+                Phone = lead.Phone,
+                Source = lead.Source,
+                Status = lead.Status,
+                ManagerAssigned = lead.ManagerAssignedNavigation?.Name,
+                SalesRepAssigned = lead.SalesRepAssignedNavigation?.Name,
+                CreatedBy = lead.CreatedBy,
+                CreatedAt = lead.CreatedAt,
+                UpdatedAt = lead.UpdatedAt,
+                AssignedAt = lead.AssignedAt
+            });
+        }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateLead([FromBody] Lead lead)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var userRole = User.FindFirst(ClaimTypes.Role).Value;
+
+            // Create a new lead object
+            Lead newLead = new Lead
+            {
+                Name = lead.Name,
+                Email = lead.Email,
+                Phone = lead.Phone,
+                Source = lead.Source,
+                Status = lead.Status,
+                CreatedBy = userId,
+                CreatedAt = DateTime.UtcNow,
+                AssignedAt = DateTime.UtcNow
+            };
+
+            // Handle Sales Representative role
+            if (userRole == "Sales Representative")
+            {
+                if (lead.ManagerAssigned != null || lead.SalesRepAssigned != null)
                 {
-                    return BadRequest(new { message = "You can only assign Sales Representatives under your management." });
+                    return BadRequest(new { message = "Sales Representatives cannot assign Manager or Sales Representative to the lead." });
                 }
-            }
 
-            newLead.ManagerAssigned = userId;
-            newLead.SalesRepAssigned = lead.SalesRepAssigned;
-        }
-        // Handle Admin role
-        else if (userRole == "Admin")
-        {
-            if (lead.ManagerAssigned != null)
-            {
-                var managerExists = await _context.Users
-                    .AnyAsync(u => u.Uid == lead.ManagerAssigned && u.Role == "Manager");
+                // Automatically assign ManagerAssigned to the Sales Rep's Manager
+                var manager = await _context.Users
+                    .Where(u => u.Uid == userId)
+                    .Select(u => u.ReportsTo)
+                    .FirstOrDefaultAsync();
 
-                if (!managerExists)
+                if (manager == null)
                 {
-                    return BadRequest(new { message = "The specified Manager does not exist." });
+                    return BadRequest(new { message = "Sales Representative does not have a Manager assigned." });
                 }
+
+                newLead.ManagerAssigned = manager;
+                newLead.SalesRepAssigned = userId; // Automatically assign Sales Rep to themselves
             }
-
-            if (lead.SalesRepAssigned != null)
+            // Handle Manager role
+            else if (userRole == "Manager")
             {
-                var validSalesRep = await _context.Users
-                    .AnyAsync(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == lead.ManagerAssigned);
-
-                if (!validSalesRep)
+                if (lead.SalesRepAssigned != null)
                 {
-                    return BadRequest(new { message = "You can only assign Sales Representatives under the specified Manager." });
-                }
-            }
+                    var validSalesRep = await _context.Users
+                        .AnyAsync(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
 
-            newLead.ManagerAssigned = null; // Use Admin's ID if ManagerAssigned is null
-            newLead.SalesRepAssigned = lead.SalesRepAssigned;
-        }
-        else
-        {
-            return Unauthorized(new { message = "Invalid role. Access denied." });
-        }
-
-        // Add the new lead to the Leads table
-        _context.Leads.Add(newLead);
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "Lead created successfully.", lead = newLead });
-    }
-
-    [Authorize]
-    [HttpPut("update/{id}")]
-    public async Task<IActionResult> UpdateLead(int id, [FromBody] JsonElement requestBody)
-    {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-        var lead = await _context.Leads.FindAsync(id);
-        if (lead == null)
-        {
-            return NotFound(new { message = "Lead not found" });
-        }
-
-        // Role-based access control
-        if (userRole == "Manager")
-        {
-            var managerLeads = await _context.Leads
-                .Where(l => l.ManagerAssigned == userId ||
-                            _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
-                .Select(l => l.Lid)
-                .ToListAsync();
-
-            if (!managerLeads.Contains(id))
-                return Forbid();
-        }
-        else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
-        {
-            return Forbid();
-        }
-
-        // Allowed fields to update
-        var allowedFields = new List<string> { "Name", "Email", "Phone", "Source" };
-        var leadType = typeof(Lead);
-
-        // Iterate over the JSON properties
-        foreach (var property in requestBody.EnumerateObject())
-        {
-            var propName = property.Name;
-            var propValue = property.Value.ToString();
-
-            // Check if the property is allowed
-            if (!allowedFields.Contains(propName))
-                continue;
-
-            var propInfo = leadType.GetProperty(propName);
-            if (propInfo != null)
-            {
-                var oldValue = propInfo.GetValue(lead)?.ToString();
-                if (oldValue != propValue)
-                {
-                    // Update lead property
-                    propInfo.SetValue(lead, Convert.ChangeType(propValue, propInfo.PropertyType));
-
-                    // Log the update
-                    var leadUpdateLog = new LeadUpdateLog
+                    if (!validSalesRep)
                     {
-                        Lid = id,
-                        Uid = userId,
-                        FieldUpdated = propName,
-                        OldValue = oldValue,
-                        NewValue = propValue,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                    _context.LeadUpdateLogs.Add(leadUpdateLog);
+                        return BadRequest(new { message = "You can only assign Sales Representatives under your management." });
+                    }
+                }
+
+                newLead.ManagerAssigned = userId;
+                newLead.SalesRepAssigned = lead.SalesRepAssigned;
+            }
+            // Handle Admin role
+            else if (userRole == "Admin")
+            {
+                if (lead.ManagerAssigned != null)
+                {
+                    var managerExists = await _context.Users
+                        .AnyAsync(u => u.Uid == lead.ManagerAssigned && u.Role == "Manager");
+
+                    if (!managerExists)
+                    {
+                        return BadRequest(new { message = "The specified Manager does not exist." });
+                    }
+                }
+
+                if (lead.SalesRepAssigned != null)
+                {
+                    var validSalesRep = await _context.Users
+                        .AnyAsync(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == lead.ManagerAssigned);
+
+                    if (!validSalesRep)
+                    {
+                        return BadRequest(new { message = "You can only assign Sales Representatives under the specified Manager." });
+                    }
+                }
+
+                newLead.ManagerAssigned = null; // Use Admin's ID if ManagerAssigned is null
+                newLead.SalesRepAssigned = lead.SalesRepAssigned;
+            }
+            else
+            {
+                return Unauthorized(new { message = "Invalid role. Access denied." });
+            }
+
+            // Add the new lead to the Leads table
+            _context.Leads.Add(newLead);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Lead created successfully.", lead = newLead });
+        }
+
+        [Authorize]
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateLead(int id, [FromBody] JsonElement requestBody)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            var lead = await _context.Leads.FindAsync(id);
+            if (lead == null)
+            {
+                return NotFound(new { message = "Lead not found" });
+            }
+
+            // Role-based access control
+            if (userRole == "Manager")
+            {
+                var managerLeads = await _context.Leads
+                    .Where(l => l.ManagerAssigned == userId ||
+                                _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+                    .Select(l => l.Lid)
+                    .ToListAsync();
+
+                if (!managerLeads.Contains(id))
+                    return BadRequest(new { message = "You are not authorized to update this lead. You may only update leads assigned to your team." });
+            }
+            else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
+            {
+                return BadRequest(new { message = "You are not authorized to update this lead. This lead is not assigned to you." });
+            }
+
+            // Allowed fields to update
+            var allowedFields = new List<string> { "Name", "Email", "Phone", "Source" };
+            var leadType = typeof(Lead);
+
+            // Iterate over the JSON properties
+            foreach (var property in requestBody.EnumerateObject())
+            {
+                var propName = property.Name;
+                var propValue = property.Value.ToString();
+
+                // Check if the property is allowed
+                if (!allowedFields.Contains(propName))
+                    continue;
+
+                var propInfo = leadType.GetProperty(propName);
+                if (propInfo != null)
+                {
+                    var oldValue = propInfo.GetValue(lead)?.ToString();
+                    if (oldValue != propValue)
+                    {
+                        // Update lead property
+                        propInfo.SetValue(lead, Convert.ChangeType(propValue, propInfo.PropertyType));
+
+                        // Log the update
+                        var leadUpdateLog = new LeadUpdateLog
+                        {
+                            Lid = id,
+                            Uid = userId,
+                            FieldUpdated = propName,
+                            OldValue = oldValue,
+                            NewValue = propValue,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _context.LeadUpdateLogs.Add(leadUpdateLog);
+                    }
                 }
             }
+
+            lead.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Lead updated successfully" });
         }
 
-        lead.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "Lead updated successfully" });
-    }
-
-    [Authorize]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteLead(int id)
-    {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-        var lead = await _context.Leads.FindAsync(id);
-        if (lead == null)
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteLead(int id)
         {
-            return NotFound(new { message = "Lead not found" });
-        }
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        // Role-based access control
-        if (userRole == "Manager")
-        {
-            var managerLeads = await _context.Leads
-                .Where(l => l.ManagerAssigned == userId ||
-                            _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
-                .Select(l => l.Lid)
-                .ToListAsync();
-
-            if (!managerLeads.Contains(id))
-                return Forbid();
-        }
-        else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
-        {
-            return Forbid();
-        }
-
-        _context.Leads.Remove(lead);
-        await _context.SaveChangesAsync();
-
-        return Ok(new { message = "Lead deleted successfully" });
-    }
-
-    [Authorize]
-    [HttpPatch("assign/{leadId}")]
-    public async Task<IActionResult> AssignLeadToSalesRep(int leadId, [FromBody] JsonElement requestBody)
-    {
-        if (!requestBody.TryGetProperty("SalesRepAssigned", out JsonElement salesRepElement) || !salesRepElement.TryGetInt32(out int newSalesRepId))
-        {
-            return BadRequest(new { message = "Sales Representative ID is required and must be an integer." });
-        }
-
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
-        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-
-        // Fetch the lead
-        var lead = await _context.Leads.FindAsync(leadId);
-        if (lead == null)
-        {
-            return NotFound(new { message = "Lead not found" });
-        }
-
-        // Fetch the new Sales Rep
-        var salesRep = await _context.Users
-            .FirstOrDefaultAsync(u => u.Uid == newSalesRepId && u.Role == "Sales Representative");
-
-        if (salesRep == null)
-        {
-            return BadRequest(new { message = "Invalid Sales Representative ID" });
-        }
-
-        // Prevent Sales Representatives from assigning leads
-        if (userRole == "Sales Representative")
-        {
-            return Forbid();
-        }
-
-        // Lead's ManagerAssigned must match SalesRep's ReportsTo
-        if (userRole == "Admin")
-        {
-            if (lead.ManagerAssigned == null || lead.ManagerAssigned != salesRep.ReportsTo)
+            var lead = await _context.Leads.FindAsync(id);
+            if (lead == null)
             {
-                return BadRequest(new { message = "The assigned Sales Rep must report to the lead's assigned Manager." });
+                return NotFound(new { message = "Lead not found" });
             }
-        }
-        // Lead must be assigned to them & Sales Rep must report to them
-        else if (userRole == "Manager")
-        {
-            if (lead.ManagerAssigned != userId || salesRep.ReportsTo != userId)
+
+            // Role-based access control
+            if (userRole == "Manager")
             {
-                return Forbid();
+                var managerLeads = await _context.Leads
+                    .Where(l => l.ManagerAssigned == userId ||
+                                _context.Users.Any(u => u.ReportsTo == userId && u.Uid == l.SalesRepAssigned))
+                    .Select(l => l.Lid)
+                    .ToListAsync();
+
+                if (!managerLeads.Contains(id))
+                    return BadRequest(new { message = "You are not authorized to delete this lead. You may only delete leads assigned to your team." });
             }
-        }
-
-        // Assign or reassign Sales Rep
-        lead.SalesRepAssigned = newSalesRepId;
-        lead.AssignedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(new
-        {
-            message = "Lead assigned successfully",
-            leadId,
-            newSalesRepId
-        });
-    }
-
-    [HttpPatch("status/{leadId}")]
-    public async Task<IActionResult> UpdateLeadStatus(int leadId, [FromBody] JsonElement requestBody)
-    {
-        // Get user ID and role from JWT token
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
-
-        if (userIdClaim == null || userRoleClaim == null)
-        {
-            return Unauthorized("User ID or Role not found in token.");
-        }
-
-        int userId = int.Parse(userIdClaim.Value);
-        string userRole = userRoleClaim.Value;
-
-        // Extract status from request body
-        if (!requestBody.TryGetProperty("status", out JsonElement statusElement) || statusElement.ValueKind != JsonValueKind.String)
-        {
-            return BadRequest("Invalid request. 'status' field is required and must be a string.");
-        }
-
-        string newStatus = statusElement.GetString()?.Trim();
-
-        // Validate the new status
-        if (string.IsNullOrEmpty(newStatus) || !new[] { "New", "Contacted", "Follow-up", "Converted", "Lost" }.Contains(newStatus))
-        {
-            return BadRequest("Invalid status value.");
-        }
-
-        // Find the lead
-        var lead = await _context.Leads.FindAsync(leadId);
-        if (lead == null)
-        {
-            return NotFound("Lead not found.");
-        }
-
-        string oldStatus = lead.Status ?? "New"; // Default to "New" if null
-
-        // Check if the status is actually changing
-        if (oldStatus == newStatus)
-        {
-            return BadRequest("Lead status is already set to the requested status.");
-        }
-
-        // **Authorization Check**
-        if (userRole == "Admin")
-        {
-            // Admin can update any lead status
-        }
-        else if (userRole == "Manager")
-        {
-            // Manager can update leads assigned to them or their Sales Representatives
-            bool isManagerAssigned = lead.ManagerAssigned == userId;
-            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
-
-            if (!isManagerAssigned && !isSalesRepUnderManager)
+            else if (userRole == "Sales Representative" && lead.SalesRepAssigned != userId)
             {
-                return Forbid("You are not authorized to update this lead.");
+                return BadRequest(new { message = "You are not authorized to delete this lead. This lead is not assigned to you." });
             }
+
+            _context.Leads.Remove(lead);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Lead deleted successfully" });
         }
-        else if (userRole == "Sales Representative")
+
+        [Authorize]
+        [HttpPatch("assign/{leadId}")]
+        public async Task<IActionResult> AssignLeadToSalesRep(int leadId, [FromBody] JsonElement requestBody)
         {
-            // Sales Representative can only update their assigned leads
-            if (lead.SalesRepAssigned != userId)
+            if (!requestBody.TryGetProperty("SalesRepAssigned", out JsonElement salesRepElement) || !salesRepElement.TryGetInt32(out int newSalesRepId))
             {
-                return Forbid("You are not authorized to update this lead.");
+                return BadRequest(new { message = "Sales Representative ID is required and must be an integer." });
             }
-        }
-        else
-        {
-            return Forbid("Invalid role.");
-        }
 
-        // **Update lead status**
-        lead.Status = newStatus;
-        lead.UpdatedAt = DateTime.UtcNow;
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-        // Insert into LeadStatusHistory
-        var statusHistory = new LeadStatusHistory
-        {
-            Lid = leadId,
-            Uid = userId,
-            OldStatus = oldStatus,
-            NewStatus = newStatus,
-            TimeOfChange = DateTime.UtcNow
-        };
-        _context.LeadStatusHistories.Add(statusHistory);
-
-        // Insert into LeadUpdateLog
-        var updateLog = new LeadUpdateLog
-        {
-            Lid = leadId,
-            Uid = userId,
-            FieldUpdated = "Status",
-            OldValue = oldStatus,
-            NewValue = newStatus,
-            UpdatedAt = DateTime.UtcNow
-        };
-        _context.LeadUpdateLogs.Add(updateLog);
-
-        // Save changes
-        await _context.SaveChangesAsync();
-
-        return Ok(new
-        {
-            Message = "Lead status updated successfully.",
-            LeadId = leadId,
-            OldStatus = oldStatus,
-            NewStatus = newStatus
-        });
-    }
-
-    [HttpPost("notes/activitylog/{leadId}")]
-    public async Task<IActionResult> AddNoteToLeadActivityLog(int leadId, [FromBody] JsonElement requestBody)
-    {
-        // Get user ID and role from JWT token
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
-
-        if (userIdClaim == null || userRoleClaim == null)
-        {
-            return Unauthorized("User ID or Role not found in token.");
-        }
-
-        int userId = int.Parse(userIdClaim.Value);
-        string userRole = userRoleClaim.Value;
-
-        // Extract notes from request body
-        if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String)
-        {
-            return BadRequest("Invalid request. 'notes' field is required and must be a string.");
-        }
-
-        string notes = notesElement.GetString()?.Trim();
-
-        // Validate notes
-        if (string.IsNullOrEmpty(notes))
-        {
-            return BadRequest("Notes cannot be empty.");
-        }
-
-        // Find the lead
-        var lead = await _context.Leads.FindAsync(leadId);
-        if (lead == null)
-        {
-            return NotFound("Lead not found.");
-        }
-
-        // **Authorization Check**
-        if (userRole == "Admin")
-        {
-            return Forbid("Admins are not allowed to add notes.");
-        }
-        else if (userRole == "Manager")
-        {
-            bool isManagerAssigned = lead.ManagerAssigned == userId;
-            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
-
-            if (!isManagerAssigned && !isSalesRepUnderManager)
+            // Fetch the lead
+            var lead = await _context.Leads.FindAsync(leadId);
+            if (lead == null)
             {
-                return Forbid("You are not authorized to add notes to this lead.");
+                return NotFound(new { message = "Lead not found" });
             }
-        }
-        else if (userRole == "Sales Representative")
-        {
-            if (lead.SalesRepAssigned != userId)
+
+            // Fetch the new Sales Rep
+            var salesRep = await _context.Users
+                .FirstOrDefaultAsync(u => u.Uid == newSalesRepId && u.Role == "Sales Representative");
+
+            if (salesRep == null)
             {
-                return Forbid("You are not authorized to add notes to this lead.");
+                return BadRequest(new { message = "Invalid Sales Representative ID" });
             }
-        }
 
-        // **Add note to LeadActivityLog**
-        var leadActivityLog = new LeadActivityLog
-        {
-            Lid = leadId,
-            Uid = userId,
-            ActivityDate = DateTime.UtcNow,
-            Notes = notes,
-            Responded = false
-        };
-
-        _context.LeadActivityLogs.Add(leadActivityLog);
-
-        // Commit changes to database
-        await _context.SaveChangesAsync();
-
-        return Ok(new
-        {
-            Message = "Note added to activity log successfully.",
-            LeadId = leadId,
-            AddedBy = userId,
-            Notes = notes
-        });
-    }
-
-    [HttpPost("notes/followup/{leadId}")]
-    public async Task<IActionResult> AddNoteAndStatusToLeadFollowUp(int leadId, [FromBody] JsonElement requestBody)
-    {
-        // Get user ID and role from JWT token
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        var userRoleClaim = User.FindFirst(ClaimTypes.Role);
-
-        if (userIdClaim == null || userRoleClaim == null)
-        {
-            return Unauthorized("User ID or Role not found in token.");
-        }
-
-        int userId = int.Parse(userIdClaim.Value);
-        string userRole = userRoleClaim.Value;
-
-        // Extract notes and status from the request body
-        if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String ||
-            !requestBody.TryGetProperty("status", out JsonElement statusElement) || statusElement.ValueKind != JsonValueKind.String)
-        {
-            return BadRequest("Invalid request. 'notes' and 'status' are required and must be valid.");
-        }
-
-        string notes = notesElement.GetString()?.Trim();
-        string status = statusElement.GetString()?.Trim();
-        DateTime followUpDate = DateTime.UtcNow;  // Default follow-up date is set to the current date and time.
-
-        if (string.IsNullOrEmpty(notes))
-        {
-            return BadRequest("Notes cannot be empty.");
-        }
-
-        // Validate the status value is one of the allowed strings
-        var validStatuses = new[] { "Pending", "Completed", "Missed" };
-        if (string.IsNullOrEmpty(status) || !validStatuses.Contains(status))
-        {
-            return BadRequest("Invalid status. Please provide a valid status ('Pending', 'Completed', or 'Missed').");
-        }
-
-        // Check if follow_up_date was provided in the request
-        if (requestBody.TryGetProperty("follow_up_date", out JsonElement followUpDateElement) && followUpDateElement.ValueKind == JsonValueKind.String)
-        {
-            if (!DateTime.TryParse(followUpDateElement.GetString(), out followUpDate))
+            // Prevent Sales Representatives from assigning leads
+            if (userRole == "Sales Representative")
             {
-                return BadRequest("Invalid date format for follow-up.");
+                return BadRequest(new { message = "You are not authorized to assign leads to others." });
             }
-        }
 
-        // Find the lead
-        var lead = await _context.Leads.FindAsync(leadId);
-        if (lead == null)
-        {
-            return NotFound("Lead not found.");
-        }
-
-        // **Authorization Check**
-        if (userRole == "Admin")
-        {
-            return Forbid("Admins are not allowed to add notes.");
-        }
-        else if (userRole == "Manager")
-        {
-            bool isManagerAssigned = lead.ManagerAssigned == userId;
-            bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
-
-            if (!isManagerAssigned && !isSalesRepUnderManager)
+            // Lead's ManagerAssigned must match SalesRep's ReportsTo
+            if (userRole == "Admin")
             {
-                return Forbid("You are not authorized to add notes to this lead.");
+                if (lead.ManagerAssigned == null || lead.ManagerAssigned != salesRep.ReportsTo)
+                {
+                    return BadRequest(new { message = "The assigned Sales Rep must report to the lead's assigned Manager." });
+                }
             }
-        }
-        else if (userRole == "Sales Representative")
-        {
-            if (lead.SalesRepAssigned != userId)
+            // Lead must be assigned to them & Sales Rep must report to them
+            else if (userRole == "Manager")
             {
-                return Forbid("You are not authorized to add notes to this lead.");
+                if (lead.ManagerAssigned != userId || salesRep.ReportsTo != userId)
+                {
+                    return BadRequest(new { message = "You are not authorized to assign this lead to the selected Sales Rep." });
+                }
             }
+
+            // Assign or reassign Sales Rep
+            lead.SalesRepAssigned = newSalesRepId;
+            lead.AssignedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Lead assigned successfully",
+                leadId,
+                newSalesRepId
+            });
         }
 
-        // **Save Follow-up Entry in LeadFollowUps**
-        var leadFollowUp = new LeadFollowUp
+        [HttpPatch("status/{leadId}")]
+        public async Task<IActionResult> UpdateLeadStatus(int leadId, [FromBody] JsonElement requestBody)
         {
-            Lid = leadId,
-            Uid = userId,
-            FollowUpDate = followUpDate,  // Default to current date if not provided
-            Status = status,  // Status as string (e.g., 'Pending', 'Completed', 'Missed')
-            Notes = notes,  // Notes for the follow-up
-            CreatedAt = DateTime.UtcNow
-        };
+            // Get user ID and role from JWT token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
-        _context.LeadFollowUps.Add(leadFollowUp);
+            if (userIdClaim == null || userRoleClaim == null)
+            {
+                return Unauthorized("User ID or Role not found in token.");
+            }
 
-        // Commit changes to database
-        await _context.SaveChangesAsync();
+            int userId = int.Parse(userIdClaim.Value);
+            string userRole = userRoleClaim.Value;
 
-        return Ok(new
+            // Extract status from request body
+            if (!requestBody.TryGetProperty("status", out JsonElement statusElement) || statusElement.ValueKind != JsonValueKind.String)
+            {
+                return BadRequest("Invalid request. 'status' field is required and must be a string.");
+            }
+
+            string newStatus = statusElement.GetString()?.Trim();
+
+            // Validate the new status
+            if (string.IsNullOrEmpty(newStatus) || !new[] { "New", "Contacted", "Follow-up", "Converted", "Lost" }.Contains(newStatus))
+            {
+                return BadRequest("Invalid status value.");
+            }
+
+            // Find the lead
+            var lead = await _context.Leads.FindAsync(leadId);
+            if (lead == null)
+            {
+                return NotFound("Lead not found.");
+            }
+
+            string oldStatus = lead.Status ?? "New"; // Default to "New" if null
+
+            // Check if the status is actually changing
+            if (oldStatus == newStatus)
+            {
+                return BadRequest("Lead status is already set to the requested status.");
+            }
+
+            // **Authorization Check**
+            if (userRole == "Admin")
+            {
+                // Admin can update any lead status
+            }
+            else if (userRole == "Manager")
+            {
+                // Manager can update leads assigned to them or their Sales Representatives
+                bool isManagerAssigned = lead.ManagerAssigned == userId;
+                bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+                if (!isManagerAssigned && !isSalesRepUnderManager)
+                {
+                    return BadRequest(new { message = "You are not authorized to update this lead." });
+                }
+            }
+            else if (userRole == "Sales Representative")
+            {
+                // Sales Representative can only update their assigned leads
+                if (lead.SalesRepAssigned != userId)
+                {
+                    return BadRequest(new { message = "You are not authorized to update this lead." });
+                }
+            }
+            else
+            {
+                return BadRequest(new { message = "Invalid role." });
+            }
+
+            // **Update lead status**
+            lead.Status = newStatus;
+            lead.UpdatedAt = DateTime.UtcNow;
+
+            // Insert into LeadStatusHistory
+            var statusHistory = new LeadStatusHistory
+            {
+                Lid = leadId,
+                Uid = userId,
+                OldStatus = oldStatus,
+                NewStatus = newStatus,
+                TimeOfChange = DateTime.UtcNow
+            };
+            _context.LeadStatusHistories.Add(statusHistory);
+
+            // Insert into LeadUpdateLog
+            var updateLog = new LeadUpdateLog
+            {
+                Lid = leadId,
+                Uid = userId,
+                FieldUpdated = "Status",
+                OldValue = oldStatus,
+                NewValue = newStatus,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.LeadUpdateLogs.Add(updateLog);
+
+            // Save changes
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "Lead status updated successfully.",
+                LeadId = leadId,
+                OldStatus = oldStatus,
+                NewStatus = newStatus
+            });
+        }
+
+        [HttpPost("notes/activitylog/{leadId}")]
+        public async Task<IActionResult> AddNoteToLeadActivityLog(int leadId, [FromBody] JsonElement requestBody)
         {
-            Message = "Follow-up created successfully with notes and status.",
-            LeadId = leadId,
-            AddedBy = userId,
-            Notes = notes,
-            Status = status,
-            FollowUpDate = followUpDate
-        });
-    }
+            // Get user ID and role from JWT token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
 
-    [HttpGet("activity-history")]
-    public async Task<IActionResult> GetActivityLogs()
-    {
-        try
+            if (userIdClaim == null || userRoleClaim == null)
+            {
+                return Unauthorized("User ID or Role not found in token.");
+            }
+
+            int userId = int.Parse(userIdClaim.Value);
+            string userRole = userRoleClaim.Value;
+
+            // Extract notes from request body
+            if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String)
+            {
+                return BadRequest("Invalid request. 'notes' field is required and must be a string.");
+            }
+
+            string notes = notesElement.GetString()?.Trim();
+
+            // Validate notes
+            if (string.IsNullOrEmpty(notes))
+            {
+                return BadRequest("Notes cannot be empty.");
+            }
+
+            // Find the lead
+            var lead = await _context.Leads.FindAsync(leadId);
+            if (lead == null)
+            {
+                return NotFound("Lead not found.");
+            }
+
+            // **Authorization Check**
+            if (userRole == "Admin")
+            {
+                return BadRequest(new { message = "Admins are not allowed to add notes." });
+            }
+            else if (userRole == "Manager")
+            {
+                bool isManagerAssigned = lead.ManagerAssigned == userId;
+                bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+                if (!isManagerAssigned && !isSalesRepUnderManager)
+                {
+                    return BadRequest(new { message = "You are not authorized to add notes to this lead." });
+                }
+            }
+            else if (userRole == "Sales Representative")
+            {
+                if (lead.SalesRepAssigned != userId)
+                {
+                    return BadRequest(new { message = "You are not authorized to add notes to this lead." });
+                }
+            }
+
+            // **Add note to LeadActivityLog**
+            var leadActivityLog = new LeadActivityLog
+            {
+                Lid = leadId,
+                Uid = userId,
+                ActivityDate = DateTime.UtcNow,
+                Notes = notes,
+                Responded = false
+            };
+
+            _context.LeadActivityLogs.Add(leadActivityLog);
+
+            // Commit changes to database
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "Note added to activity log successfully.",
+                LeadId = leadId,
+                AddedBy = userId,
+                Notes = notes
+            });
+        }
+
+        [HttpPost("notes/followup/{leadId}")]
+        public async Task<IActionResult> AddNoteAndStatusToLeadFollowUp(int leadId, [FromBody] JsonElement requestBody)
+        {
+            // Get user ID and role from JWT token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            var userRoleClaim = User.FindFirst(ClaimTypes.Role);
+
+            if (userIdClaim == null || userRoleClaim == null)
+            {
+                return Unauthorized("User ID or Role not found in token.");
+            }
+
+            int userId = int.Parse(userIdClaim.Value);
+            string userRole = userRoleClaim.Value;
+
+            // Extract notes and status from the request body
+            if (!requestBody.TryGetProperty("notes", out JsonElement notesElement) || notesElement.ValueKind != JsonValueKind.String ||
+                !requestBody.TryGetProperty("status", out JsonElement statusElement) || statusElement.ValueKind != JsonValueKind.String)
+            {
+                return BadRequest("Invalid request. 'notes' and 'status' are required and must be valid.");
+            }
+
+            string notes = notesElement.GetString()?.Trim();
+            string status = statusElement.GetString()?.Trim();
+            DateTime followUpDate = DateTime.UtcNow;  // Default follow-up date is set to the current date and time.
+
+            if (string.IsNullOrEmpty(notes))
+            {
+                return BadRequest("Notes cannot be empty.");
+            }
+
+            // Validate the status value is one of the allowed strings
+            var validStatuses = new[] { "Pending", "Completed", "Missed" };
+            if (string.IsNullOrEmpty(status) || !validStatuses.Contains(status))
+            {
+                return BadRequest("Invalid status. Please provide a valid status ('Pending', 'Completed', or 'Missed').");
+            }
+
+            // Check if follow_up_date was provided in the request
+            if (requestBody.TryGetProperty("follow_up_date", out JsonElement followUpDateElement) && followUpDateElement.ValueKind == JsonValueKind.String)
+            {
+                if (!DateTime.TryParse(followUpDateElement.GetString(), out followUpDate))
+                {
+                    return BadRequest("Invalid date format for follow-up.");
+                }
+            }
+
+            // Find the lead
+            var lead = await _context.Leads.FindAsync(leadId);
+            if (lead == null)
+            {
+                return NotFound("Lead not found.");
+            }
+
+            // **Authorization Check**
+            if (userRole == "Admin")
+            {
+                return BadRequest(new { message = "Admins are not allowed to add notes." });
+            }
+            else if (userRole == "Manager")
+            {
+                bool isManagerAssigned = lead.ManagerAssigned == userId;
+                bool isSalesRepUnderManager = _context.Users.Any(u => u.Uid == lead.SalesRepAssigned && u.ReportsTo == userId);
+
+                if (!isManagerAssigned && !isSalesRepUnderManager)
+                {
+                    return BadRequest(new { message = "You are not authorized to add notes to this lead." });
+                }
+            }
+            else if (userRole == "Sales Representative")
+            {
+                if (lead.SalesRepAssigned != userId)
+                {
+                    return BadRequest(new { message = "You are not authorized to add notes to this lead." });
+                }
+            }
+
+            // **Save Follow-up Entry in LeadFollowUps**
+            var leadFollowUp = new LeadFollowUp
+            {
+                Lid = leadId,
+                Uid = userId,
+                FollowUpDate = followUpDate,  // Default to current date if not provided
+                Status = status,  // Status as string (e.g., 'Pending', 'Completed', 'Missed')
+                Notes = notes,  // Notes for the follow-up
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.LeadFollowUps.Add(leadFollowUp);
+
+            // Commit changes to database
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "Follow-up created successfully with notes and status.",
+                LeadId = leadId,
+                AddedBy = userId,
+                Notes = notes,
+                Status = status,
+                FollowUpDate = followUpDate
+            });
+        }
+
+        [HttpGet("activity-history")]
+        public async Task<IActionResult> GetActivityLogs()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -704,7 +702,7 @@ public class LeadController : ControllerBase
             }
             else
             {
-                return Forbid();
+                return BadRequest(new { message = "You do not have permission to access the activity logs." });
             }
 
             var activityLogs = await query
@@ -722,28 +720,19 @@ public class LeadController : ControllerBase
 
             return Ok(activityLogs);
         }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while fetching activity logs.", error = ex.Message });
-        }
-    }
 
-    [HttpGet("activity-history/{leadId}")]
-    public async Task<IActionResult> GetActivityLogsByLead(int leadId)
-    {
-        try
+        [HttpGet("activity-history/{leadId}")]
+        public async Task<IActionResult> GetActivityLogsByLead(int leadId)
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            // Fetch the lead to verify role-based access
             var lead = await _context.Leads.FindAsync(leadId);
             if (lead == null)
             {
                 return NotFound(new { message = "Lead not found." });
             }
 
-            // Check access permissions based on user role
             if (userRole == "Admin")
             {
                 // Admin has access to all leads
@@ -752,25 +741,24 @@ public class LeadController : ControllerBase
             {
                 if (lead.ManagerAssigned != userId)
                 {
-                    return Forbid("You do not have access to this lead's activity logs.");
+                    return BadRequest(new { message = "You do not have access to this lead's activity logs." });
                 }
             }
             else if (userRole == "Sales Representative")
             {
                 if (lead.SalesRepAssigned != userId)
                 {
-                    return Forbid("You do not have access to this lead's activity logs.");
+                    return BadRequest(new { message = "You do not have access to this lead's activity logs." });
                 }
             }
             else
             {
-                return Forbid("Unauthorized role access.");
+                return BadRequest(new { message = "Unauthorized role access." });
             }
 
-            // Fetch activity logs for the specified lead
             var activityLogs = await _context.LeadActivityLogs
                 .Where(log => log.Lid == leadId)
-                .Include(log => log.UidNavigation) // Fetch activity performer
+                .Include(log => log.UidNavigation)
                 .Select(log => new
                 {
                     log.Aid,
@@ -782,17 +770,12 @@ public class LeadController : ControllerBase
                 })
                 .ToListAsync();
 
-            // Return message if no activity logs exist for the lead
             if (activityLogs.Count == 0)
             {
                 return Ok(new { message = "No activity logs found for this lead." });
             }
 
             return Ok(activityLogs);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "An error occurred while fetching activity logs.", error = ex.Message });
         }
     }
 }

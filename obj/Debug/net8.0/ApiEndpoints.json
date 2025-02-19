@@ -1,5 +1,15 @@
 [
   {
+    "ContainingType": "LeadManagment.Controllers.UserManagementController",
+    "Method": "GetAllUsers",
+    "RelativePath": "admin/user-management",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "LoginController",
     "Method": "Login",
     "RelativePath": "auth/login",
@@ -36,7 +46,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "GetLeads",
     "RelativePath": "leads",
     "HttpMethod": "GET",
@@ -46,7 +56,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "GetLeadById",
     "RelativePath": "leads/{id}",
     "HttpMethod": "GET",
@@ -62,7 +72,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "DeleteLead",
     "RelativePath": "leads/{id}",
     "HttpMethod": "DELETE",
@@ -78,7 +88,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "GetActivityLogs",
     "RelativePath": "leads/activity-history",
     "HttpMethod": "GET",
@@ -88,7 +98,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "GetActivityLogsByLead",
     "RelativePath": "leads/activity-history/{leadId}",
     "HttpMethod": "GET",
@@ -104,7 +114,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "AssignLeadToSalesRep",
     "RelativePath": "leads/assign/{leadId}",
     "HttpMethod": "PATCH",
@@ -125,7 +135,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "CreateLead",
     "RelativePath": "leads/create",
     "HttpMethod": "POST",
@@ -141,28 +151,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
-    "Method": "AddLeadNote",
-    "RelativePath": "leads/notes/{leadId}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "leadId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "requestBody",
-        "Type": "System.Text.Json.JsonElement",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "AddNoteToLeadActivityLog",
     "RelativePath": "leads/notes/activitylog/{leadId}",
     "HttpMethod": "POST",
@@ -183,7 +172,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "AddNoteAndStatusToLeadFollowUp",
     "RelativePath": "leads/notes/followup/{leadId}",
     "HttpMethod": "POST",
@@ -204,7 +193,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "UpdateLeadStatus",
     "RelativePath": "leads/status/{leadId}",
     "HttpMethod": "PATCH",
@@ -225,7 +214,7 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "LeadController",
+    "ContainingType": "LeadManagment.Controllers.LeadController",
     "Method": "UpdateLead",
     "RelativePath": "leads/update/{id}",
     "HttpMethod": "PUT",
