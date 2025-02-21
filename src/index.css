@@ -1,0 +1,73 @@
+/* @import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities"; */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* General Styles */
+:root {
+  font-family: "REM", "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Styles */
+body {
+  @apply bg-gray-100 text-gray-900;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-semibold text-gray-800;
+}
+
+/* Buttons */
+button {
+  @apply bg-teal-600 text-white font-medium py-2 px-4 rounded-lg transition duration-300;
+}
+
+button:hover {
+  @apply bg-teal-700;
+}
+
+button:focus {
+  @apply outline-none ring-2 ring-teal-300;
+}
+
+/* Input Fields */
+input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent;
+}
+
+/* Form Labels */
+label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+/* Links */
+a {
+  @apply font-medium text-[#636060] transition duration-200;
+}
+
+/* Login Prompt */
+.auth-link {
+  @apply text-sm text-gray-500 mt-3;
+}
+
+/* Card Container */
+.auth-card {
+  @apply bg-white rounded-lg shadow-lg p-8 flex w-[900px];
+}
