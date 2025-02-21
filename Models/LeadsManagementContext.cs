@@ -22,8 +22,6 @@ public partial class LeadsManagementContext : DbContext
 
     public virtual DbSet<LeadActivityLog> LeadActivityLogs { get; set; }
 
-    public virtual DbSet<LeadAssignmentHistory> LeadAssignmentHistories { get; set; }
-
     public virtual DbSet<LeadFollowUp> LeadFollowUps { get; set; }
 
     public virtual DbSet<LeadImportLog> LeadImportLogs { get; set; }
@@ -45,8 +43,6 @@ public partial class LeadsManagementContext : DbContext
             optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
         }
     }
-
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,6 +72,7 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.ImportExportLogs)
                 .HasForeignKey(d => d.Uid)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("import_export_logs_ibfk_1");
         });
 
@@ -85,21 +82,28 @@ public partial class LeadsManagementContext : DbContext
 
             entity.ToTable("leads");
 
-            entity.HasIndex(e => e.AssignedTo, "Assigned_To");
-
             entity.HasIndex(e => e.CreatedBy, "Created_By");
 
             entity.HasIndex(e => e.Email, "Email").IsUnique();
 
+            entity.HasIndex(e => e.ManagerAssigned, "Manager_Assigned");
+
+            entity.HasIndex(e => e.SalesRepAssigned, "SalesRep_Assigned");
+
             entity.Property(e => e.Lid).HasColumnName("LId");
-            entity.Property(e => e.AssignedTo).HasColumnName("Assigned_To");
+            entity.Property(e => e.AssignedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp")
+                .HasColumnName("Assigned_At");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("timestamp")
                 .HasColumnName("Created_At");
             entity.Property(e => e.CreatedBy).HasColumnName("Created_By");
+            entity.Property(e => e.ManagerAssigned).HasColumnName("Manager_Assigned");
             entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.Phone).HasMaxLength(20);
+            entity.Property(e => e.SalesRepAssigned).HasColumnName("SalesRep_Assigned");
             entity.Property(e => e.Source).HasColumnType("enum('Website','Reference','Ads','Social Media')");
             entity.Property(e => e.Status).HasColumnType("enum('New','Contacted','Follow-up','Converted','Lost')");
             entity.Property(e => e.UpdatedAt)
@@ -107,12 +111,19 @@ public partial class LeadsManagementContext : DbContext
                 .HasColumnType("timestamp")
                 .HasColumnName("Updated_At");
 
-            entity.HasOne(d => d.AssignedToNavigation).WithMany(p => p.LeadAssignedToNavigations)
-                .HasForeignKey(d => d.AssignedTo)
-                .HasConstraintName("leads_ibfk_1");
-
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.LeadCreatedByNavigations)
                 .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("leads_ibfk_3");
+
+            entity.HasOne(d => d.ManagerAssignedNavigation).WithMany(p => p.LeadManagerAssignedNavigations)
+                .HasForeignKey(d => d.ManagerAssigned)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("leads_ibfk_1");
+
+            entity.HasOne(d => d.SalesRepAssignedNavigation).WithMany(p => p.LeadSalesRepAssignedNavigations)
+                .HasForeignKey(d => d.SalesRepAssigned)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("leads_ibfk_2");
         });
 
@@ -136,45 +147,13 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.LidNavigation).WithMany(p => p.LeadActivityLogs)
                 .HasForeignKey(d => d.Lid)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("lead_activity_log_ibfk_1");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.LeadActivityLogs)
                 .HasForeignKey(d => d.Uid)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lead_activity_log_ibfk_2");
-        });
-
-        modelBuilder.Entity<LeadAssignmentHistory>(entity =>
-        {
-            entity.HasKey(e => e.Aid).HasName("PRIMARY");
-
-            entity.ToTable("lead_assignment_history");
-
-            entity.HasIndex(e => e.AssignedBy, "Assigned_By");
-
-            entity.HasIndex(e => e.AssignedTo, "Assigned_To");
-
-            entity.HasIndex(e => e.Lid, "LId");
-
-            entity.Property(e => e.Aid).HasColumnName("AId");
-            entity.Property(e => e.AssignedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnType("timestamp")
-                .HasColumnName("Assigned_At");
-            entity.Property(e => e.AssignedBy).HasColumnName("Assigned_By");
-            entity.Property(e => e.AssignedTo).HasColumnName("Assigned_To");
-            entity.Property(e => e.Lid).HasColumnName("LId");
-
-            entity.HasOne(d => d.AssignedByNavigation).WithMany(p => p.LeadAssignmentHistoryAssignedByNavigations)
-                .HasForeignKey(d => d.AssignedBy)
-                .HasConstraintName("lead_assignment_history_ibfk_3");
-
-            entity.HasOne(d => d.AssignedToNavigation).WithMany(p => p.LeadAssignmentHistoryAssignedToNavigations)
-                .HasForeignKey(d => d.AssignedTo)
-                .HasConstraintName("lead_assignment_history_ibfk_2");
-
-            entity.HasOne(d => d.LidNavigation).WithMany(p => p.LeadAssignmentHistories)
-                .HasForeignKey(d => d.Lid)
-                .HasConstraintName("lead_assignment_history_ibfk_1");
         });
 
         modelBuilder.Entity<LeadFollowUp>(entity =>
@@ -204,10 +183,12 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.LidNavigation).WithMany(p => p.LeadFollowUps)
                 .HasForeignKey(d => d.Lid)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("lead_follow_ups_ibfk_1");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.LeadFollowUps)
                 .HasForeignKey(d => d.Uid)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lead_follow_ups_ibfk_2");
         });
 
@@ -232,14 +213,17 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.ImportedByNavigation).WithMany(p => p.LeadImportLogs)
                 .HasForeignKey(d => d.ImportedBy)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lead_import_log_ibfk_3");
 
             entity.HasOne(d => d.LidNavigation).WithMany(p => p.LeadImportLogs)
                 .HasForeignKey(d => d.Lid)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("lead_import_log_ibfk_2");
 
             entity.HasOne(d => d.Log).WithMany(p => p.LeadImportLogs)
                 .HasForeignKey(d => d.LogId)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("lead_import_log_ibfk_1");
         });
 
@@ -269,10 +253,12 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.LidNavigation).WithMany(p => p.LeadStatusHistories)
                 .HasForeignKey(d => d.Lid)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("lead_status_history_ibfk_1");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.LeadStatusHistories)
                 .HasForeignKey(d => d.Uid)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lead_status_history_ibfk_2");
         });
 
@@ -304,10 +290,12 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.LidNavigation).WithMany(p => p.LeadUpdateLogs)
                 .HasForeignKey(d => d.Lid)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("lead_update_log_ibfk_1");
 
             entity.HasOne(d => d.UidNavigation).WithMany(p => p.LeadUpdateLogs)
                 .HasForeignKey(d => d.Uid)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("lead_update_log_ibfk_2");
         });
 
@@ -343,6 +331,7 @@ public partial class LeadsManagementContext : DbContext
 
             entity.HasOne(d => d.ReportsToNavigation).WithMany(p => p.InverseReportsToNavigation)
                 .HasForeignKey(d => d.ReportsTo)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("users_ibfk_1");
         });
 

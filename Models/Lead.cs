@@ -13,11 +13,13 @@ public partial class Lead
 
     public string Phone { get; set; } = null!;
 
-    public string Source { get; set; } = null!;
+    public string? Source { get; set; }
 
-    public string Status { get; set; } = null!;
+    public string? Status { get; set; }
 
-    public int? AssignedTo { get; set; }
+    public int? ManagerAssigned { get; set; }
+
+    public int? SalesRepAssigned { get; set; }
 
     public int? CreatedBy { get; set; }
 
@@ -25,13 +27,11 @@ public partial class Lead
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual User? AssignedToNavigation { get; set; }
+    public DateTime? AssignedAt { get; set; }
 
     public virtual User? CreatedByNavigation { get; set; }
 
     public virtual ICollection<LeadActivityLog> LeadActivityLogs { get; set; } = new List<LeadActivityLog>();
-
-    public virtual ICollection<LeadAssignmentHistory> LeadAssignmentHistories { get; set; } = new List<LeadAssignmentHistory>();
 
     public virtual ICollection<LeadFollowUp> LeadFollowUps { get; set; } = new List<LeadFollowUp>();
 
@@ -40,4 +40,10 @@ public partial class Lead
     public virtual ICollection<LeadStatusHistory> LeadStatusHistories { get; set; } = new List<LeadStatusHistory>();
 
     public virtual ICollection<LeadUpdateLog> LeadUpdateLogs { get; set; } = new List<LeadUpdateLog>();
+
+    public virtual User? ManagerAssignedNavigation { get; set; }
+
+    public virtual User? SalesRepAssignedNavigation { get; set; }
+
+
 }

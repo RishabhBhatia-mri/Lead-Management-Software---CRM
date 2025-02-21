@@ -1,5 +1,31 @@
 [
   {
+    "ContainingType": "LeadManagement.Controllers.AdminController",
+    "Method": "CreateUser",
+    "RelativePath": "admin/create-user",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "LeadManagement.Controllers.AdminController\u002BCreateUserRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.AdminController",
+    "Method": "GetManagers",
+    "RelativePath": "admin/managers",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "LoginController",
     "Method": "Login",
     "RelativePath": "auth/login",
@@ -13,6 +39,425 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LogoutController",
+    "Method": "Logout",
+    "RelativePath": "auth/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LoginController",
+    "Method": "GetUserRole",
+    "RelativePath": "auth/user-role",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DashboardController",
+    "Method": "GetDashboard",
+    "RelativePath": "dashboard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Dashboards.LeadManagment.Dashboards.AdminDashboard",
+    "Method": "GetLeadAssignments",
+    "RelativePath": "dashboard/admin/assignment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Dashboards.LeadManagment.Dashboards.AdminDashboard",
+    "Method": "GetCount",
+    "RelativePath": "dashboard/admin/count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Dashboards.LeadManagment.Dashboards.AdminDashboard",
+    "Method": "GetContent",
+    "RelativePath": "dashboard/admin/managers/details",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Dashboards.ManagerDashboard",
+    "Method": "GetLeadAssignments",
+    "RelativePath": "dashboard/manager/assignment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Dashboards.ManagerDashboard",
+    "Method": "GetCount",
+    "RelativePath": "dashboard/manager/count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Dashboards.ManagerDashboard",
+    "Method": "GetContent",
+    "RelativePath": "dashboard/manager/sales-reps/details",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "managerId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.SalesDashboard",
+    "Method": "GetSalesRepLeadsCount",
+    "RelativePath": "dashboard/sales",
+    "HttpMethod": "",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "salesRepId",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.SalesDashboard",
+    "Method": "GetSalesRepLeadsCountAPI",
+    "RelativePath": "dashboard/sales/count",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.ExportController",
+    "Method": "ExportLeads",
+    "RelativePath": "export/leads",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "LeadManagement.Controllers.ExportRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "KanbanController",
+    "Method": "GetAdminKanban",
+    "RelativePath": "kanban/admin",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "KanbanController",
+    "Method": "GetManagerKanban",
+    "RelativePath": "kanban/manager",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "KanbanController",
+    "Method": "GetSalesRepKanban",
+    "RelativePath": "kanban/salesRep",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadInfoController",
+    "Method": "GetLeadInfo",
+    "RelativePath": "leadInfo/{LId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "LId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadInfoController",
+    "Method": "DeleteLead",
+    "RelativePath": "leadInfo/{LId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "LId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadsController",
+    "Method": "GetLeadDetails",
+    "RelativePath": "leads/{lid}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "lid",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadsController",
+    "Method": "AddFollowUp",
+    "RelativePath": "leads/add-followup/{lid}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "lid",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "LeadManagement.Controllers.LeadsController\u002BAddFollowUpRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadsController",
+    "Method": "AddNote",
+    "RelativePath": "leads/add-note/{lid}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "lid",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "LeadManagement.Controllers.LeadsController\u002BAddNoteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadsController",
+    "Method": "UpdatePhone",
+    "RelativePath": "leads/update-phone/{lid}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "lid",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "LeadManagement.Controllers.LeadsController\u002BUpdatePhoneRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.LeadsController",
+    "Method": "UpdateStatus",
+    "RelativePath": "leads/update-status/{lid}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "lid",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "LeadManagement.Controllers.LeadsController\u002BUpdateStatusRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.ManagementAssignmentController",
+    "Method": "GetLeadAssignments",
+    "RelativePath": "management/assignment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.ManagementAssignmentController",
+    "Method": "AssignLead",
+    "RelativePath": "management/assignment/{leadId}/assign",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "leadId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "LeadManagment.Controllers.ManagementAssignmentController\u002BAssignLeadRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Leads.ManagerLeadsController",
+    "Method": "ImportLeads",
+    "RelativePath": "manager-leads/addCsv",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Leads.ManagerLeadsController",
+    "Method": "AddNewLead",
+    "RelativePath": "manager-leads/addNewLeads",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "LeadManagment.Leads.LeadRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Leads.ManagerLeadsController",
+    "Method": "GetSalesReps",
+    "RelativePath": "manager-leads/getSalesReps",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.ProfileController",
+    "Method": "GetProfile",
+    "RelativePath": "profile",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.ProfileController",
+    "Method": "UpdateProfile",
+    "RelativePath": "profile/update",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "LeadManagment.Controllers.ProfileController\u002BUpdateProfileRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagment.Controllers.UserManagementController",
+    "Method": "GetAllUsers",
+    "RelativePath": "user-management",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "LeadManagement.Controllers.ViewLeadsController",
+    "Method": "GetAllLeads",
+    "RelativePath": "viewLeads",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   }
 ]

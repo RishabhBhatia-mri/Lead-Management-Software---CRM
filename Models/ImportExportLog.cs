@@ -1,21 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LeadManagment.Models;
+namespace LeadManagment.Models {
+    public partial class ImportExportLog {
+        public int LogId { get; set; }
+        public int? Uid { get; set; }
+        public string? ActionType { get; set; }
+        public string FileName { get; set; } = null!;
+        public DateTime? LogTimestamp { get; set; }
+        public string Format { get; set; } = null!;   
+        public DateTime? ExportDate { get; set; }    
 
-public partial class ImportExportLog
-{
-    public int LogId { get; set; }
+        public virtual ICollection<LeadImportLog> LeadImportLogs { get; set; } = new List<LeadImportLog>();
 
-    public int? Uid { get; set; }
-
-    public string ActionType { get; set; } = null!;
-
-    public string FileName { get; set; } = null!;
-
-    public DateTime? LogTimestamp { get; set; }
-
-    public virtual ICollection<LeadImportLog> LeadImportLogs { get; set; } = new List<LeadImportLog>();
-
-    public virtual User? UidNavigation { get; set; }
+        public virtual User? UidNavigation { get; set; }
+    }
 }

@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LeadManagment.Models;
 using Microsoft.Extensions.Configuration;
+using LeadManagement.Helpers;
 using System;
 
 [Route("auth")]
@@ -33,7 +34,7 @@ public class LoginController : ControllerBase {
             .Where(u => u.Email == request.Email)
             .FirstOrDefaultAsync();
 
-        if (user == null || user.Password != request.Password) {
+        if (user == null || !PasswordHelper.VerifyPassword(request.Password, user.Password)) {
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
@@ -52,12 +53,13 @@ public class LoginController : ControllerBase {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
 
         var claims = new[] {
-        new Claim(JwtRegisteredClaimNames.Sub, user.Uid.ToString()),
+        new Claim(ClaimTypes.NameIdentifier, user.Uid.ToString()), // Correct user ID claim
         new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        new Claim(ClaimTypes.Role, user.Role), // Include Role in Token
+        new Claim(ClaimTypes.Role, user.Role),
         new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         new Claim(JwtRegisteredClaimNames.Exp,
-            new DateTimeOffset(DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"]))).ToUnixTimeSeconds().ToString()) // Expiry claim
+            new DateTimeOffset(DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"])))
+            .ToUnixTimeSeconds().ToString())
     };
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -66,13 +68,44 @@ public class LoginController : ControllerBase {
             issuer: jwtSettings["Issuer"],
             audience: jwtSettings["Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"])), 
+            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["TokenValidityMins"])),
             signingCredentials: creds
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    [HttpGet("user-role")]
+    public IActionResult GetUserRole() {
+        var userRole = _httpContextAccessor.HttpContext.Session.GetString("UserRole");
+        var userId = _httpContextAccessor.HttpContext.Session.GetString("UserId");
+
+        if (!string.IsNullOrEmpty(userRole) && !string.IsNullOrEmpty(userId)) {
+            return Ok(new { role = userRole, userId = userId });
+        }
+
+        var authorizationHeader = HttpContext.Request.Headers["Authorization"].ToString();
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ")) {
+            return Unauthorized(new { message = "Unauthorized: Token missing or invalid." });
+        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        var jwtHandler = new JwtSecurityTokenHandler();
+
+        if (!jwtHandler.CanReadToken(token)) {
+            return Unauthorized(new { message = "Invalid token." });
+        }
+
+        var jwtToken = jwtHandler.ReadJwtToken(token);
+        var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+
+        if (roleClaim == null || userIdClaim == null) {
+            return Unauthorized(new { message = "Required claims not found in token." });
+        }
+
+        return Ok(new { role = roleClaim.Value, userId = userIdClaim.Value });
+    }
 
 }
 

@@ -11,7 +11,7 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
-    public string Password { get; set; } = null!;
+    public string? Password { get; set; } = null!;
 
     public string Role { get; set; } = null!;
 
@@ -31,17 +31,15 @@ public partial class User
 
     public virtual ICollection<LeadActivityLog> LeadActivityLogs { get; set; } = new List<LeadActivityLog>();
 
-    public virtual ICollection<Lead> LeadAssignedToNavigations { get; set; } = new List<Lead>();
-
-    public virtual ICollection<LeadAssignmentHistory> LeadAssignmentHistoryAssignedByNavigations { get; set; } = new List<LeadAssignmentHistory>();
-
-    public virtual ICollection<LeadAssignmentHistory> LeadAssignmentHistoryAssignedToNavigations { get; set; } = new List<LeadAssignmentHistory>();
-
     public virtual ICollection<Lead> LeadCreatedByNavigations { get; set; } = new List<Lead>();
 
     public virtual ICollection<LeadFollowUp> LeadFollowUps { get; set; } = new List<LeadFollowUp>();
 
     public virtual ICollection<LeadImportLog> LeadImportLogs { get; set; } = new List<LeadImportLog>();
+
+    public virtual ICollection<Lead> LeadManagerAssignedNavigations { get; set; } = new List<Lead>();
+
+    public virtual ICollection<Lead> LeadSalesRepAssignedNavigations { get; set; } = new List<Lead>();
 
     public virtual ICollection<LeadStatusHistory> LeadStatusHistories { get; set; } = new List<LeadStatusHistory>();
 

@@ -2,9 +2,20 @@ using LeadManagment.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml; // Add the EPPlus namespace
 using System.Text;
+using LeadManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddDbContext<LeadsManagementContext>();
+builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<AdminService>();
+
+
+// Set the EPPlus License Context
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial; // or LicenseContext.Commercial for commercial use
 
 builder.Services.AddControllers();
 
@@ -12,6 +23,15 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<LeadsManagementContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("lmdb"),
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("lmdb"))));
+
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", policy => {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 
 // JWT token config
 var jwtSettings = builder.Configuration.GetSection("JwtConfig");
@@ -33,7 +53,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDistributedMemoryCache();
@@ -45,13 +64,15 @@ builder.Services.AddSession(options => {
 
 var app = builder.Build();
 
-app.UseRouting();
+app.UseCors("AllowAll"); // Move this above app.UseRouting()
 
+app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 // Set default route to /auth/login
 app.UseEndpoints(endpoints => {
