@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj": {}
+    "C:\\Users\\Smit.Ankhiwala\\Desktop\\Lead Management\\Lead-Management-Software---CRM\\LeadManagment.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj": {
+    "C:\\Users\\Smit.Ankhiwala\\Desktop\\Lead Management\\Lead-Management-Software---CRM\\LeadManagment.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj",
+        "projectUniqueName": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Lead Management\\Lead-Management-Software---CRM\\LeadManagment.csproj",
         "projectName": "LeadManagment",
-        "projectPath": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\LeadManagment.csproj",
+        "projectPath": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Lead Management\\Lead-Management-Software---CRM\\LeadManagment.csproj",
         "packagesPath": "C:\\Users\\Smit.Ankhiwala\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Demo\\obj\\",
+        "outputPath": "C:\\Users\\Smit.Ankhiwala\\Desktop\\Lead Management\\Lead-Management-Software---CRM\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
