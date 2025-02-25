@@ -8,11 +8,27 @@ import { useLocation } from "react-router-dom";
 function App() {
   const location = useLocation();
 
-  // Define routes where Navbar and Sidebar should be hidden
-  const hideLayoutRoutes = ["/login", "*"];
+  const validBaseRoutes = [
+    "/dashboard",
+    "/profile",
+    "/viewleads",
+    "/leadinfo",
+    "/export",
+    "/kanban",
+    "/addlead",
+    "/userManagement",
+    "/assignSalesRep",
+    "/assign",
+  ];
 
-  // Hide layout if it's a login page or 404 page
-  const hideLayout = hideLayoutRoutes.includes(location.pathname);
+  // Check if the current route starts with any valid base route
+  const isValidRoute = validBaseRoutes.some(
+    (route) =>
+      location.pathname.startsWith(route + "/") || location.pathname === route
+  );
+
+  // Hide Navbar and Sidebar if it's a login page or an unknown route (404)
+  const hideLayout = location.pathname === "/login" || !isValidRoute;
 
   return (
     <div className="flex flex-col h-screen">
