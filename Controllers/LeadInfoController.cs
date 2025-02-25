@@ -48,23 +48,23 @@ namespace LeadManagement.Controllers {
                 Phone = lead.Phone,
                 LeadSource = lead.Source,
                 Status = lead.Status,
-                AssignedTo = lead.SalesRepAssignedNavigation?.Name ?? "Unassigned", // Sales Rep name
-                LastContacted = lead.UpdatedAt?.ToString("yyyy-MM-dd"), // Assuming last update is last contacted
+                AssignedTo = lead.SalesRepAssignedNavigation?.Name ?? "Unassigned", 
+                LastContacted = lead.UpdatedAt?.ToString("yyyy-MM-dd"),
 
                 // Detailed Info
                 FullName = lead.Name,
-                Location = "INDIA", // Example, replace with actual data if available
-                PriorityLevel = "High", // Example, replace with actual data if available
+                Location = "INDIA", 
+                PriorityLevel = "High", 
                 AddedBy = new {
-                    Name = lead.CreatedByNavigation?.Name ?? "Unknown", // Fetch creator's Name
+                    Name = lead.CreatedByNavigation?.Name ?? "Unknown",
                     Date = lead.CreatedAt?.ToString("yyyy-MM-dd hh:mm tt")
                 },
                 ModifiedBy = new {
-                    Name = lead.SalesRepAssignedNavigation?.Name ?? "Unknown", // Fetch the SalesRep's Name
+                    Name = lead.SalesRepAssignedNavigation?.Name ?? "Unknown", 
                     Date = lead.UpdatedAt?.ToString("yyyy-MM-dd hh:mm tt")
                 },
-                Description = "Lead interested in a 2-bedroom apartment.", // Example, replace with actual data if available
-                FollowUpNotes = followUps // Include follow-up notes
+                Description = "Lead interested in a 2-bedroom apartment.", 
+                FollowUpNotes = followUps 
             };
 
             return Ok(leadDetails);

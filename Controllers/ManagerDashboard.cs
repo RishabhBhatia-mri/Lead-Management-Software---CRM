@@ -116,7 +116,7 @@ namespace LeadManagment.Dashboards {
 
             // Filter the leadList to include only leads under the logged-in manager
             var leadList = _context.Leads
-                .Where(l => l.ManagerAssigned == managerId) // 🔹 Filtering leads by manager
+                .Where(l => l.ManagerAssigned == managerId)
                 .Select(l => new {
                     l.Lid,
                     l.Name,

@@ -34,9 +34,9 @@ namespace LeadManagement.Services {
                     client.Disconnect(true);
                 }
 
-                Console.WriteLine($"✅ Email sent successfully to {toEmail}");
+                Console.WriteLine($"Email sent successfully to {toEmail}");
             } catch (Exception ex) {
-                Console.WriteLine($"❌ Email failed: {ex.Message}");
+                Console.WriteLine($"Email failed: {ex.Message}");
             }
         }
     }

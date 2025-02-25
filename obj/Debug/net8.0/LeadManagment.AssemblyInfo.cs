@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("LeadManagment")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4a9d3f7f548136cfb1ec8d85f856fc7ec951fb76")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+be7dcdbc9eecd15b2911586aaa589ae4c2a2951a")]
 [assembly: System.Reflection.AssemblyProductAttribute("LeadManagment")]
 [assembly: System.Reflection.AssemblyTitleAttribute("LeadManagment")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

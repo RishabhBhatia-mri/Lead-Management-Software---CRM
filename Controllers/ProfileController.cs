@@ -78,12 +78,6 @@ namespace LeadManagment.Controllers {
             }
 
 
-            // Since you're not updating the phone number now, this block can be skipped.
-            // Update phone number if provided (if you decide to add it back in future updates)
-            // if (!string.IsNullOrEmpty(request.PhoneNo)) {
-            //     user.PhoneNo = request.PhoneNo;
-            // }
-
             // Set the `UpdatedAt` timestamp
             user.UpdatedAt = DateTime.UtcNow;
 
